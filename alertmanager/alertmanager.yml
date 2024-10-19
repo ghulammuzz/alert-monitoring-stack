@@ -1,0 +1,21 @@
+global:
+  smtp_smarthost: '${SMTP_SMARTHOST}'
+  smtp_from: '${SMTP_FROM}'
+  smtp_auth_username: '${SMTP_AUTH_USERNAME}'
+  smtp_auth_password: '${SMTP_AUTH_PASSWORD}'
+  smtp_require_tls: ${SMTP_REQUIRE_TLS}
+
+route:
+  group_by: ['alertname']
+  receiver: 'email-notifications'
+
+receivers:
+  - name: 'email-notifications'
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        send_resolved: true
+        # html: true
+        # headers:
+        #   Content-Type: text/html
+        # html: |
+        #   {{ template "custom_email.tmpl" . }}

@@ -1,0 +1,20 @@
+groups:
+  - name: resource_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)) > 75
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Penggunaan CPU Tinggi pada {{ $labels.instance }}"
+          description: "Penggunaan CPU di atas 75% selama 5 menit. Saat ini: {{ $value }}%."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes/ node_memory_MemTotal_bytes)) * 100 > 75
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Penggunaan Memori Tinggi pada {{ $labels.instance }}"
+          description: "Penggunaan Memori di atas 75% selama 5 menit. Saat ini: {{ $value }}%."

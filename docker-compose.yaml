@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prom.rule=Host(`${TRAEFIK_PROM_HOST}`)"
+      - "traefik.http.services.prom.loadbalancer.server.port=9090"
+    ports:
+      - "9090"
+    depends_on:
+      - node-exporter
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    networks:
+      - dokploy-network
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alert.rule=Host(`${TRAEFIK_ALERT_HOST}`)"
+      - "traefik.http.services.alert.loadbalancer.server.port=9093"
+    ports:
+      - "9093"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    networks:
+      - dokploy-network
+    ports:
+      - "9100"
+
+  smtp_server:
+    image: bytemark/smtp:latest
+    networks:
+      - dokploy-network
+    environment:
+      - RELAY_HOST=${RELAY_HOST}
+      - RELAY_PORT=${RELAY_PORT}
+      - RELAY_USERNAME=${RELAY_USERNAME}
+      - RELAY_PASSWORD=${RELAY_PASSWORD}
+    ports:
+      - "25"
+
+  grafana:
+    image: grafana/grafana:latest
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`${TRAEFIK_GRAFANA_HOST}`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    ports:
+      - "3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  grafana-storage:
